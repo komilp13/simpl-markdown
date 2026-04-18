@@ -20,4 +20,6 @@ Simpl Markdown is a greenfield cloud-based markdown notebook web app that Komil 
 - UX Design Spec: `_bmad-output/planning-artifacts/ux-design-specification.md` (completed 2026-04-16; Slite Gradient direction chosen, 10 custom components, 5 journey flows, full a11y strategy)
 - Design Directions HTML: `_bmad-output/planning-artifacts/ux-design-directions.html` (6 mockups, Direction 3 Slite Gradient selected)
 - Key UX decisions from party mode: iA Writer as primary editor inspiration, tldraw/excalidraw as playground model (not CodePen), sepia deferred to v1.1, fade-away limited to 4 syntax types in MVP, playground ships with Mermaid only (not full parity), 99.5% public uptime (not 99.9%), sync is last-write-wins not CRDT, FR32/FR33 (wiki links/backlinks) moved to Phase 3
-- Next workflow steps: architecture → epics & stories → implementation readiness check
+- Architecture: `_bmad-output/planning-artifacts/architecture.md` (completed 2026-04-17; 17 decisions, full project structure, validation passed, implementation-ready)
+- Key architecture decisions: Option A starter (create-next-app with-supabase), UUIDs everywhere, soft deletes via deleted_at, full-content version snapshots, PostgreSQL FTS with tsvector, TanStack Query + Zustand state, Server Actions for mutations, feature-based folder structure, GitHub Actions CI, three environments ($0 during dev)
+- Next workflow steps: epics & stories → implementation readiness check → development

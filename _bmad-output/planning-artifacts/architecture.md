@@ -1,5 +1,8 @@
 ---
-stepsCompleted: [1, 2, 3, 4, 5]
+stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
+lastStep: 8
+status: 'complete'
+completedAt: '2026-04-17'
 inputDocuments: ['_bmad-output/planning-artifacts/prd.md', '_bmad-output/planning-artifacts/ux-design-specification.md', '_bmad-output/brainstorming/brainstorming-session-2026-04-12-1940.md']
 workflowType: 'architecture'
 project_name: 'simpl-markdown'
@@ -299,3 +302,155 @@ Environment variables managed via `.env.local` (dev), Vercel environment variabl
 ### Enforcement Rules
 
 All agents MUST: follow naming exactly, use `ActionResult<T>`, co-locate tests, use named exports only, no barrel files, TanStack Query for server state / Zustand for UI state only, lazy-load Mermaid/KaTeX/code-highlighting, include RLS in every table migration, use `is_owner()` in all RLS policies, format dates with `date-fns`.
+
+## Project Structure & Boundaries
+
+### Complete Project Directory Structure
+
+```
+simpl-markdown/
+├── .github/workflows/ci.yml
+├── e2e/                                    # Playwright e2e tests
+│   ├── onboarding.spec.ts
+│   ├── editor.spec.ts
+│   ├── organization.spec.ts
+│   ├── playground.spec.ts
+│   └── upgrade.spec.ts
+├── public/
+│   ├── fonts/ (PlusJakartaSans, JetBrainsMono variable woff2)
+│   ├── icons/ (notebook icon library SVGs)
+│   └── og-image.png
+├── supabase/
+│   ├── config.toml
+│   ├── seed.sql                            # Tutorial notebook template
+│   └── migrations/
+│       ├── 00001_initial_schema.sql        # Users, notebooks, sections, notes
+│       ├── 00002_tags.sql                  # Tags, note_tags junction
+│       ├── 00003_search.sql               # search_vector, GIN index, trigger
+│       ├── 00004_trash.sql                # deleted_at columns
+│       ├── 00005_rls_policies.sql         # is_owner(), all RLS
+│       ├── 00006_journal.sql              # Journal entries
+│       ├── 00007_user_settings.sql        # User settings
+│       ├── 00008_subscriptions.sql        # Stripe sync
+│       ├── 00009_note_versions.sql        # Phase 2
+│       ├── 00010_templates.sql            # Phase 2
+│       └── 00011_file_attachments.sql     # Phase 3
+├── src/
+│   ├── app/
+│   │   ├── globals.css                    # Slite Gradient CSS tokens
+│   │   ├── layout.tsx                     # Root: fonts, theme, Sentry
+│   │   ├── (marketing)/ (SSR, no auth)
+│   │   │   ├── page.tsx (landing)
+│   │   │   ├── pricing/page.tsx
+│   │   │   ├── playground/page.tsx (client-side editor, no Supabase)
+│   │   │   └── blog/[slug]/page.tsx
+│   │   ├── (auth)/
+│   │   │   ├── login/page.tsx
+│   │   │   └── callback/route.ts
+│   │   ├── (app)/ (authenticated SPA)
+│   │   │   ├── layout.tsx (app shell: sidebar + topbar + statusbar)
+│   │   │   ├── dashboard/page.tsx
+│   │   │   ├── notebook/[notebookId]/[sectionId]/[noteId]/page.tsx
+│   │   │   ├── journal/page.tsx, journal/[date]/page.tsx
+│   │   │   ├── favorites/page.tsx
+│   │   │   ├── trash/page.tsx
+│   │   │   └── settings/{editor,appearance,security,...}/page.tsx
+│   │   └── api/webhooks/stripe/route.ts
+│   ├── components/
+│   │   ├── ui/ (shadcn: button, dialog, command, toast, popover, etc.)
+│   │   ├── editor/ (fade-away-editor, slash-command-menu, mermaid/katex/code renderers, status-bar, tag-input, outline)
+│   │   ├── sidebar/ (notebook-sidebar, tree items, color-icon-picker)
+│   │   ├── dashboard/ (widget components)
+│   │   ├── journal/ (calendar, stats)
+│   │   ├── settings/ (theme-picker, font-settings, shortcut-editor)
+│   │   ├── pricing/ (pricing-table, billing-toggle)
+│   │   └── shared/ (search-palette, theme-provider, empty-state, confirm-dialog)
+│   ├── lib/
+│   │   ├── supabase/ (client.ts, server.ts, middleware.ts, types.ts, actions/*.ts)
+│   │   ├── stripe/ (client.ts, webhook-handler.ts, subscription-sync.ts)
+│   │   ├── editor/ (TipTap extensions: fade-away, slash-commands, mermaid, katex, code-block, auto-save)
+│   │   └── utils/ (cn.ts, dates.ts, constants.ts, errors.ts)
+│   ├── hooks/ (use-auto-save, use-idle-timer, use-notebooks, use-notes, use-search, use-subscription, use-keyboard-shortcuts)
+│   ├── stores/ (theme-store, sidebar-store, editor-store)
+│   ├── types/ (database.ts, actions.ts, notebook.ts, editor.ts, subscription.ts, settings.ts)
+│   ├── styles/themes.css
+│   └── middleware.ts (auth redirect, session refresh)
+├── .env.local, .env.example
+├── next.config.ts, tailwind.config.ts, tsconfig.json
+├── vitest.config.ts, playwright.config.ts
+└── components.json (shadcn config)
+```
+
+### Rendering Boundaries
+
+| Route Group | Rendering | Auth | Supabase | Purpose |
+|------------|-----------|------|----------|---------|
+| `(marketing)/*` | SSR/Static | No | No | SEO pages |
+| `(marketing)/playground` | SSR shell + CSR editor | No | No | Client-only editor |
+| `(auth)/*` | SSR | No | Auth only | Login, callback |
+| `(app)/*` | CSR (SPA-like) | Yes | Full | All user data |
+| `api/webhooks/*` | API Route | Webhook secret | Write | Stripe events |
+
+### Data Access Pattern
+
+- **Reads:** Browser → Supabase client directly (RLS protects)
+- **Mutations:** Browser → Server Action → Supabase Server Client
+- **Webhooks:** Stripe → API Route → Supabase (webhook secret validates)
+- **Playground:** Browser only — zero Supabase calls
+
+### FR Category → File Mapping
+
+| FRs | Location | Key Files |
+|-----|----------|-----------|
+| FR-A Auth | `middleware.ts`, `(auth)/` | `login/page.tsx`, `callback/route.ts` |
+| FR-B Organization | `components/sidebar/`, `actions/` | `notebook-sidebar.tsx`, `notebook-actions.ts` |
+| FR-C Editor | `components/editor/`, `lib/editor/` | `fade-away-editor.tsx`, `fade-away-extension.ts` |
+| FR-D Discovery | `components/shared/`, `hooks/` | `search-command-palette.tsx`, `use-search.ts` |
+| FR-E Data Safety | `hooks/`, `lib/editor/` | `use-auto-save.ts`, `auto-save.ts` |
+| FR-F Journal | `components/journal/`, `(app)/journal/` | `journal-calendar.tsx`, `journal-actions.ts` |
+| FR-H Personalization | `components/settings/`, `stores/` | `theme-store.ts`, `themes.css` |
+| FR-N Monetization | `lib/stripe/`, `api/webhooks/` | `webhook-handler.ts`, `pricing-table.tsx` |
+| FR-P Playground | `(marketing)/playground/` | `playground/page.tsx` |
+
+### Data Flow (Editor Save Loop)
+
+```
+Keystroke → TipTap transaction → fade-away decoration (100ms)
+  → useAutoSave debounce (2s) → SessionStorage backup (immediate)
+  → Server Action: updateNote() → Supabase PostgreSQL (RLS: is_owner())
+  → search_vector trigger → Supabase Realtime broadcast
+  → Other devices: TanStack Query invalidate + refetch
+  → "Saved ✓" status bar badge
+```
+
+## Architecture Validation Results
+
+### Coherence Validation ✅
+
+All decisions work together without conflicts. Next.js 16 + Supabase + TipTap + Tailwind + shadcn/ui verified compatible. TanStack Query + Zustand + Supabase client: clean state separation. Server Actions + direct reads + webhook API routes: no pattern overlap. Cookie auth + middleware + RLS: defense-in-depth.
+
+### Requirements Coverage ✅
+
+**106/110 FRs fully covered.** 4 FRs (FR101-104: AI Intelligence) architecturally deferred to Phase 3 with placeholder location (`lib/ai/`).
+
+All 8 NFR categories (performance, security, reliability, scalability, accessibility, privacy, compatibility, observability) fully supported by architectural decisions.
+
+### Implementation Readiness ✅
+
+17 decisions documented with rationale. Starter template command specified. Implementation sequence ordered. Every FR maps to a specific file/directory. 10 enforcement rules documented. Three environments defined with costs.
+
+### Gap Analysis
+
+**No critical gaps.** Important non-blocking gaps: (1) Full SQL schema definitions belong in migration files, not architecture doc. (2) E2E encryption library selection deferred to Phase 3. (3) Claude API integration patterns deferred to Phase 3. Nice-to-have: database ERD diagram from migrations.
+
+### Readiness Assessment
+
+**Status: READY FOR IMPLEMENTATION. Confidence: HIGH.**
+
+**First implementation priority:**
+```bash
+npx create-next-app --example with-supabase simpl-markdown
+cd simpl-markdown
+pnpm dlx shadcn@latest init --base radix
+```
+Then: environments (D15) → initial schema (migrations 00001-00005) → CI/CD (D14).
