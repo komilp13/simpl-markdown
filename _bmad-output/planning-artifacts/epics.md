@@ -3,7 +3,7 @@ stepsCompleted: [1, 2, 3, 4]
 status: 'complete'
 completedAt: '2026-04-17'
 totalEpics: 13
-totalStories: 77
+totalStories: 78
 inputDocuments: ['_bmad-output/planning-artifacts/prd.md', '_bmad-output/planning-artifacts/architecture.md', '_bmad-output/planning-artifacts/ux-design-specification.md']
 ---
 
@@ -366,6 +366,10 @@ As a user, I want auto-signout after 30 minutes of inactivity, so that my accoun
 ### Story 1.7: App Shell Layout
 As a user, I want to see the app shell (top bar, sidebar, status bar) when I log in, so that I can navigate.
 **AC:** Given authenticated, Then top bar (52px) with logo/search/journal/theme. And sidebar (256px) with Notebooks + Quick Access. And main content area (gray #FAFAFA). And status bar (36px). And mobile sidebar as drawer via hamburger. And Ctrl+\ toggles sidebar.
+
+### Story 1.8: Developer Documentation
+As a developer, I want internal documentation covering project setup, architecture decisions, and contribution guidelines, so that I or future contributors can onboard quickly and build consistently.
+**AC:** Given a new developer clones the repo, Then README contains: project overview, prerequisites (Node, pnpm, Docker), setup steps, environment variable guide, and link to architecture doc. And a docs section covers: Server Action inventory (actions, inputs, outputs), Stripe webhook endpoint documentation (events handled, payload, errors), Supabase Realtime channel conventions. And coding standards section links to architecture patterns (naming, structure, format) with pre-commit checklist (types pass, tests pass, no barrel files, RLS on new tables).
 
 ---
 
