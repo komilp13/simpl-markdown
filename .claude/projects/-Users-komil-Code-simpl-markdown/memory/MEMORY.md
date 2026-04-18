@@ -1,0 +1,1 @@
+- [Simpl Markdown project](project_simpl_markdown.md) — Greenfield SaaS markdown notebook; brainstorming + PRD complete, next is UX/architecture

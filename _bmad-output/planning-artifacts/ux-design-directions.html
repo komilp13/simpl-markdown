@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simpl Markdown — Design Directions v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; background: #111; color: #eee; }
+
+  .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(17,17,17,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.08); padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+  .nav h1 { font-size: 15px; font-weight: 700; color: #7B68EE; letter-spacing: -0.02em; }
+  .nav-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+  .nav-tab { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: #888; transition: all 200ms; }
+  .nav-tab:hover { background: rgba(255,255,255,0.06); color: #ddd; }
+  .nav-tab.active { background: #7B68EE; color: white; border-color: #7B68EE; }
+
+  .mockups { margin-top: 52px; }
+  .mockup { display: none; min-height: calc(100vh - 52px); }
+  .mockup.active { display: block; }
+
+  .mock-shell { display: flex; height: calc(100vh - 52px); }
+  .mock-sidebar { flex-shrink: 0; overflow-y: auto; }
+  .mock-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .mock-topbar { display: flex; align-items: center; flex-shrink: 0; }
+  .mock-content { flex: 1; overflow-y: auto; }
+  .mock-statusbar { display: flex; align-items: center; flex-shrink: 0; }
+
+  .sb-section { margin-bottom: 20px; }
+  .sb-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; padding: 0 12px; }
+  .sb-item { padding: 7px 12px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 150ms; position: relative; }
+  .sb-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .sb-nested { padding-left: 30px; font-size: 13px; }
+
+  .search-bar { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .search-kbd { font-size: 10px; padding: 2px 6px; font-family: 'JetBrains Mono', monospace; border-radius: 4px; }
+
+  .ed-h1 { font-weight: 700; margin-bottom: 16px; }
+  .ed-h2 { font-weight: 600; margin-top: 28px; margin-bottom: 14px; }
+  .ed-p { margin-bottom: 14px; }
+  .ed-bold { font-weight: 700; }
+  .ed-code { font-family: 'JetBrains Mono', monospace; padding: 2px 6px; border-radius: 4px; font-size: 0.88em; }
+  .ed-block { padding: 20px; margin: 20px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; white-space: pre; overflow-x: auto; }
+  .ed-banner { padding: 14px 18px; margin: 20px 0; border-left: 3px solid; }
+  .ed-tag { padding: 3px 10px; font-size: 11px; font-weight: 500; display: inline-block; margin-right: 4px; }
+  .ed-meta { font-size: 13px; margin-bottom: 32px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+  .toast { position: fixed; bottom: 24px; right: 24px; padding: 10px 18px; font-size: 13px; display: flex; align-items: center; gap: 8px; z-index: 50; }
+
+  .desc-panel { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(17,17,17,0.95); backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.08); padding: 14px 24px; z-index: 90; }
+  .desc-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .desc-text { font-size: 12px; color: #888; line-height: 1.5; }
+
+  /* ======================== */
+  /* D1: Ugmonk Analog — cream + charcoal + gold */
+  /* ======================== */
+  .d1 { background: #fafaf2; color: #1a1a1a; font-family: 'Plus Jakarta Sans', sans-serif; }
+  .d1 .mock-sidebar { width: 240px; background: #1a1a1a; color: #d4d0c8; padding: 24px 0; }
+  .d1 .mock-sidebar .logo { color: #ffd879; font-size: 18px; font-weight: 700; padding: 0 20px; margin-bottom: 32px; display: block; }
+  .d1 .sb-label { color: #666; }
+  .d1 .sb-item { color: #999; border-radius: 0; padding: 8px 20px; }
+  .d1 .sb-item:hover { background: rgba(255,255,255,0.05); color: #d4d0c8; }
+  .d1 .sb-item.active { background: rgba(255,216,121,0.1); color: #ffd879; border-right: 2px solid #ffd879; }
+  .d1 .sb-dot { background: #ffd879; }
+  .d1 .sb-nested { padding-left: 48px; }
+  .d1 .mock-topbar { height: 56px; padding: 0 40px; background: #fafaf2; border-bottom: 1px solid #e8e5dc; }
+  .d1 .search-bar { background: #f0ede4; border: 1px solid #e0dcd2; color: #999; padding: 8px 14px; border-radius: 8px; font-size: 13px; flex: 1; max-width: 360px; }
+  .d1 .search-kbd { background: #e0dcd2; color: #666; }
+  .d1 .mock-statusbar { height: 36px; padding: 0 40px; background: #f5f3ec; border-top: 1px solid #e8e5dc; color: #999; font-size: 12px; gap: 12px; }
+  .d1 .ed-h1 { font-size: 32px; color: #1a1a1a; font-family: 'Playfair Display', serif; font-weight: 600; letter-spacing: -0.02em; }
+  .d1 .ed-h2 { font-size: 20px; color: #333; font-family: 'Playfair Display', serif; font-weight: 600; }
+  .d1 .ed-p { font-size: 16px; line-height: 1.7; color: #444; }
+  .d1 .ed-code { background: #f0ede4; color: #8b7355; }
+  .d1 .ed-block { background: #1a1a1a; color: #d4d0c8; border-radius: 6px; }
+  .d1 .ed-banner { background: #f5f7f0; border-color: #8b9a6b; color: #4a5a33; border-radius: 4px; }
+  .d1 .ed-tag { background: #f0ede4; color: #8b7355; border-radius: 4px; }
+  .d1 .ed-meta { color: #999; }
+  .d1 .toast { background: #1a1a1a; color: #fafaf2; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
+  .d1 .mock-content { display: flex; justify-content: center; }
+  .d1 .editor-area { max-width: 700px; padding: 48px 56px; }
+
+  /* ======================== */
+  /* D2: hm.la Architectural — B&W + dramatic type */
+  /* ======================== */
+  .d2 { background: #fff; color: #000; font-family: 'Inter', sans-serif; }
+  .d2 .mock-sidebar { width: 220px; background: #000; color: #888; padding: 28px 0; }
+  .d2 .mock-sidebar .logo { color: #fff; font-size: 16px; font-weight: 700; padding: 0 20px; margin-bottom: 40px; display: block; letter-spacing: -0.03em; }
+  .d2 .sb-label { color: #555; font-size: 9px; letter-spacing: 0.12em; }
+  .d2 .sb-item { color: #777; padding: 6px 20px; font-size: 13px; font-weight: 400; }
+  .d2 .sb-item:hover { color: #fff; }
+  .d2 .sb-item.active { color: #fff; font-weight: 500; }
+  .d2 .sb-item.active::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: #fff; }
+  .d2 .sb-dot { background: #555; }
+  .d2 .sb-item.active .sb-dot { background: #fff; }
+  .d2 .sb-nested { padding-left: 44px; }
+  .d2 .mock-topbar { height: 48px; padding: 0 48px; background: #fff; border-bottom: 1px solid #eee; }
+  .d2 .search-bar { background: #f5f5f5; border: none; color: #aaa; padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 400; flex: 1; max-width: 320px; }
+  .d2 .search-kbd { background: #e5e5e5; color: #777; }
+  .d2 .mock-statusbar { height: 32px; padding: 0 48px; background: #fafafa; border-top: 1px solid #eee; color: #bbb; font-size: 11px; gap: 16px; }
+  .d2 .ed-h1 { font-size: 36px; color: #000; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; }
+  .d2 .ed-h2 { font-size: 18px; color: #000; font-weight: 600; letter-spacing: -0.01em; text-transform: uppercase; font-size: 12px; letter-spacing: 0.08em; margin-top: 36px; }
+  .d2 .ed-p { font-size: 15px; line-height: 1.75; color: #333; font-weight: 300; }
+  .d2 .ed-code { background: #f5f5f5; color: #000; font-weight: 500; }
+  .d2 .ed-block { background: #000; color: #ccc; border-radius: 0; }
+  .d2 .ed-banner { background: #f8f8f8; border-color: #000; color: #333; border-radius: 0; border-left-width: 2px; }
+  .d2 .ed-tag { background: transparent; color: #888; border: 1px solid #ddd; border-radius: 0; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .d2 .ed-meta { color: #bbb; font-size: 12px; }
+  .d2 .toast { background: #000; color: #fff; border-radius: 0; box-shadow: 0 4px 20px rgba(0,0,0,0.15); font-size: 12px; }
+  .d2 .mock-content { display: flex; justify-content: center; }
+  .d2 .editor-area { max-width: 640px; padding: 56px 48px; }
+
+  /* ======================== */
+  /* D3: Slite Gradient — soft + gradient accents + rounded */
+  /* ======================== */
+  .d3 { background: #fafafa; color: #1a1a2e; font-family: 'Plus Jakarta Sans', sans-serif; }
+  .d3 .mock-sidebar { width: 256px; background: #fff; border-right: 1px solid #eee; padding: 20px 0; }
+  .d3 .mock-sidebar .logo { font-size: 18px; font-weight: 700; padding: 0 20px; margin-bottom: 28px; display: block; background: linear-gradient(135deg, #7B68EE, #ef91f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .d3 .sb-label { color: #aaa; }
+  .d3 .sb-item { color: #666; padding: 8px 16px; border-radius: 10px; margin: 0 8px; }
+  .d3 .sb-item:hover { background: #f5f0ff; color: #444; }
+  .d3 .sb-item.active { background: linear-gradient(135deg, rgba(123,104,238,0.1), rgba(239,145,247,0.1)); color: #7B68EE; font-weight: 500; }
+  .d3 .sb-dot { background: linear-gradient(135deg, #7B68EE, #ef91f7); }
+  .d3 .sb-nested { padding-left: 44px; }
+  .d3 .mock-topbar { height: 52px; padding: 0 32px; background: #fff; border-bottom: 1px solid #f0f0f0; }
+  .d3 .search-bar { background: #f5f5f5; border: 1px solid #eee; color: #999; padding: 8px 14px; border-radius: 12px; font-size: 13px; flex: 1; max-width: 380px; }
+  .d3 .search-kbd { background: #eee; color: #777; border-radius: 4px; }
+  .d3 .mock-statusbar { height: 36px; padding: 0 32px; background: #fff; border-top: 1px solid #f0f0f0; color: #aaa; font-size: 12px; gap: 12px; }
+  .d3 .ed-h1 { font-size: 30px; color: #1a1a2e; letter-spacing: -0.02em; }
+  .d3 .ed-h2 { font-size: 20px; color: #2a2a4e; }
+  .d3 .ed-p { font-size: 16px; line-height: 1.7; color: #444; }
+  .d3 .ed-code { background: #f5f0ff; color: #7B68EE; }
+  .d3 .ed-block { background: #1a1a2e; color: #c8c8e8; border-radius: 12px; }
+  .d3 .ed-banner { background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(52,211,153,0.08)); border-color: #10B981; color: #065F46; border-radius: 12px; }
+  .d3 .ed-tag { background: #f5f0ff; color: #7B68EE; border-radius: 16px; }
+  .d3 .ed-meta { color: #aaa; }
+  .d3 .toast { background: #1a1a2e; color: #eee; border-radius: 14px; box-shadow: 0 8px 30px rgba(26,26,46,0.15); }
+  .d3 .mock-content { display: flex; justify-content: center; background: #fafafa; }
+  .d3 .editor-area { max-width: 740px; padding: 40px 48px; background: #fff; margin: 16px; border-radius: 16px; border: 1px solid #f0f0f0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+
+  /* ======================== */
+  /* D4: Prometheus Bold — single accent color + open feel */
+  /* ======================== */
+  .d4 { background: #fff; color: #1e293b; font-family: 'Inter', sans-serif; }
+  .d4 .mock-sidebar { width: 248px; background: #fafbfc; border-right: 1px solid #e5e7eb; padding: 20px 0; }
+  .d4 .mock-sidebar .logo { color: #7B68EE; font-size: 18px; font-weight: 700; padding: 0 16px; margin-bottom: 28px; display: block; }
+  .d4 .sb-label { color: #9ca3af; font-size: 11px; }
+  .d4 .sb-item { color: #6b7280; padding: 7px 16px; font-size: 14px; border-radius: 8px; margin: 0 8px; }
+  .d4 .sb-item:hover { background: #f3f4f6; }
+  .d4 .sb-item.active { background: #7B68EE; color: white; }
+  .d4 .sb-dot { border: 2px solid #7B68EE; background: transparent; }
+  .d4 .sb-item.active .sb-dot { background: #fff; border-color: #fff; }
+  .d4 .sb-nested { padding-left: 40px; }
+  .d4 .mock-topbar { height: 52px; padding: 0 32px; background: #fff; border-bottom: 1px solid #e5e7eb; }
+  .d4 .search-bar { background: #f9fafb; border: 1px solid #e5e7eb; color: #9ca3af; padding: 8px 14px; border-radius: 10px; font-size: 13px; flex: 1; max-width: 400px; }
+  .d4 .search-kbd { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; border-radius: 4px; }
+  .d4 .mock-statusbar { height: 36px; padding: 0 32px; background: #fafbfc; border-top: 1px solid #e5e7eb; color: #9ca3af; font-size: 12px; gap: 16px; }
+  .d4 .ed-h1 { font-size: 28px; color: #111827; font-weight: 700; letter-spacing: -0.02em; }
+  .d4 .ed-h2 { font-size: 18px; color: #374151; font-weight: 600; }
+  .d4 .ed-p { font-size: 15px; line-height: 1.7; color: #4b5563; }
+  .d4 .ed-code { background: #f3f0ff; color: #7B68EE; }
+  .d4 .ed-block { background: #111827; color: #d1d5db; border-radius: 10px; }
+  .d4 .ed-banner { background: #ecfdf5; border-color: #10B981; color: #065f46; border-radius: 10px; }
+  .d4 .ed-tag { background: #f3f0ff; color: #7B68EE; border-radius: 6px; }
+  .d4 .ed-meta { color: #9ca3af; }
+  .d4 .toast { background: #111827; color: #f9fafb; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.12); }
+  .d4 .mock-content { display: flex; justify-content: center; }
+  .d4 .editor-area { max-width: 740px; padding: 40px 48px; }
+
+  /* ======================== */
+  /* D5: Dark Mode First — immersive dark */
+  /* ======================== */
+  .d5 { background: #0a0a0f; color: #e0e0e8; font-family: 'Plus Jakarta Sans', sans-serif; }
+  .d5 .mock-sidebar { width: 248px; background: #0f0f18; border-right: 1px solid rgba(255,255,255,0.06); padding: 24px 0; }
+  .d5 .mock-sidebar .logo { color: #a78bfa; font-size: 18px; font-weight: 700; padding: 0 20px; margin-bottom: 32px; display: block; }
+  .d5 .sb-label { color: #555; }
+  .d5 .sb-item { color: #777; padding: 7px 16px; border-radius: 8px; margin: 0 6px; font-size: 13px; }
+  .d5 .sb-item:hover { background: rgba(255,255,255,0.04); color: #aaa; }
+  .d5 .sb-item.active { background: rgba(167,139,250,0.12); color: #a78bfa; }
+  .d5 .sb-dot { background: #a78bfa; }
+  .d5 .sb-nested { padding-left: 42px; }
+  .d5 .mock-topbar { height: 48px; padding: 0 28px; background: #0a0a0f; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .d5 .search-bar { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: #666; padding: 7px 14px; border-radius: 8px; font-size: 13px; flex: 1; max-width: 360px; }
+  .d5 .search-kbd { background: rgba(255,255,255,0.06); color: #666; border: 1px solid rgba(255,255,255,0.08); }
+  .d5 .mock-statusbar { height: 32px; padding: 0 28px; background: #0f0f18; border-top: 1px solid rgba(255,255,255,0.06); color: #555; font-size: 11px; gap: 12px; }
+  .d5 .ed-h1 { font-size: 30px; color: #f0f0f8; letter-spacing: -0.02em; }
+  .d5 .ed-h2 { font-size: 20px; color: #c8c8d8; }
+  .d5 .ed-p { font-size: 15px; line-height: 1.7; color: #999; }
+  .d5 .ed-code { background: rgba(167,139,250,0.1); color: #a78bfa; }
+  .d5 .ed-block { background: #000; color: #888; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); }
+  .d5 .ed-banner { background: rgba(16,185,129,0.08); border-color: #34d399; color: #6ee7b7; border-radius: 8px; }
+  .d5 .ed-tag { background: rgba(167,139,250,0.1); color: #a78bfa; border-radius: 12px; }
+  .d5 .ed-meta { color: #555; }
+  .d5 .toast { background: #1a1a28; color: #ddd; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+  .d5 .mock-content { display: flex; justify-content: center; }
+  .d5 .editor-area { max-width: 720px; padding: 44px 48px; }
+
+  /* ======================== */
+  /* D6: Editorial Hybrid — RECOMMENDED */
+  /* ======================== */
+  .d6 { background: #fefefe; color: #1a1a1a; font-family: 'Plus Jakarta Sans', sans-serif; }
+  .d6 .mock-sidebar { width: 252px; background: #fefefe; border-right: 1px solid #f0f0f0; padding: 20px 0; }
+  .d6 .mock-sidebar .logo { color: #7B68EE; font-size: 18px; font-weight: 700; padding: 0 20px; margin-bottom: 32px; display: block; letter-spacing: -0.03em; }
+  .d6 .sb-label { color: #bbb; font-size: 10px; }
+  .d6 .sb-item { color: #777; padding: 8px 14px; border-radius: 8px; margin: 1px 8px; font-size: 14px; }
+  .d6 .sb-item:hover { background: #f8f6ff; color: #555; }
+  .d6 .sb-item.active { color: #7B68EE; font-weight: 600; background: #f3f0ff; }
+  .d6 .sb-dot { width: 10px; height: 10px; border-radius: 3px; }
+  .d6 .sb-nested { padding-left: 42px; font-size: 13px; }
+  .d6 .mock-topbar { height: 52px; padding: 0 36px; background: #fefefe; border-bottom: 1px solid #f0f0f0; }
+  .d6 .search-bar { background: #f8f8f8; border: 1px solid #eee; color: #aaa; padding: 8px 16px; border-radius: 10px; font-size: 13px; flex: 1; max-width: 380px; transition: all 200ms; }
+  .d6 .search-bar:hover { border-color: #ddd; background: #f5f5f5; }
+  .d6 .search-kbd { background: #f0f0f0; color: #999; border: 1px solid #e5e5e5; }
+  .d6 .mock-statusbar { height: 34px; padding: 0 36px; background: #fefefe; border-top: 1px solid #f0f0f0; color: #bbb; font-size: 12px; gap: 14px; }
+  .d6 .ed-h1 { font-size: 32px; color: #1a1a1a; letter-spacing: -0.025em; line-height: 1.2; }
+  .d6 .ed-h2 { font-size: 20px; color: #333; letter-spacing: -0.01em; }
+  .d6 .ed-p { font-size: 16px; line-height: 1.75; color: #444; }
+  .d6 .ed-code { background: #f5f3ff; color: #7B68EE; border-radius: 5px; }
+  .d6 .ed-block { background: #1a1a2e; color: #b8b8d0; border-radius: 10px; }
+  .d6 .ed-banner { background: #f0fdf4; border-color: #10B981; color: #065f46; border-radius: 10px; }
+  .d6 .ed-tag { background: #f5f3ff; color: #7B68EE; border-radius: 6px; }
+  .d6 .ed-meta { color: #bbb; }
+  .d6 .toast { background: #1a1a2e; color: #eee; border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
+  .d6 .mock-content { display: flex; justify-content: center; background: #fafafa; }
+  .d6 .editor-area { max-width: 740px; padding: 44px 56px; background: #fefefe; margin: 0; border-left: 1px solid #f0f0f0; border-right: 1px solid #f0f0f0; min-height: 100%; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <h1>simpl</h1>
+  <div class="nav-tabs">
+    <div class="nav-tab active" onclick="show(1)">1. Ugmonk Analog</div>
+    <div class="nav-tab" onclick="show(2)">2. hm.la Architectural</div>
+    <div class="nav-tab" onclick="show(3)">3. Slite Gradient</div>
+    <div class="nav-tab" onclick="show(4)">4. Prometheus Clean</div>
+    <div class="nav-tab" onclick="show(5)">5. Dark Immersive</div>
+    <div class="nav-tab" onclick="show(6)">6. Editorial Hybrid ★</div>
+  </div>
+</div>
+
+<!-- D1: Ugmonk Analog -->
+<div class="mockup active" id="m1">
+  <div class="mock-shell d1">
+    <div class="mock-sidebar">
+      <span class="logo">simpl</span>
+      <div class="sb-section">
+        <div class="sb-label">Notebooks</div>
+        <div class="sb-item"><div class="sb-dot" style="background:#c4956a"></div> Work Projects</div>
+        <div class="sb-item active"><div class="sb-dot"></div> Board Meetings</div>
+        <div class="sb-item"><div class="sb-dot" style="background:#8b9a6b"></div> Personal</div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-label">Sections</div>
+        <div class="sb-item sb-nested active">April 2026</div>
+        <div class="sb-item sb-nested">March 2026</div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-label">Quick Access</div>
+        <div class="sb-item">Journal</div>
+        <div class="sb-item">Favorites</div>
+        <div class="sb-item">Trash</div>
+      </div>
+    </div>
+    <div class="mock-main">
+      <div class="mock-topbar">
+        <div class="search-bar">Search notes... <span class="search-kbd">⌘K</span></div>
+        <div style="margin-left:auto;font-size:13px;color:#999;display:flex;gap:16px"><span>Journal</span><span>◐</span></div>
+      </div>
+      <div class="mock-content">
+        <div class="editor-area">
+          <div class="ed-h1">Q2 Strategy Meeting Notes</div>
+          <div class="ed-meta"><span>April 15, 2026</span><span>·</span><span class="ed-tag">#board-meeting</span><span class="ed-tag">#strategy</span></div>
+          <div class="ed-p">The board discussed <span class="ed-bold">three key initiatives</span> for Q2 including the product launch timeline, hiring plan, and budget allocation.</div>
+          <div class="ed-h2">Action Items</div>
+          <div class="ed-p">Dave to finalize the <span class="ed-code">recruitment-pipeline</span> proposal by Friday. Sarah to review budget with finance.</div>
+          <div class="ed-banner">Key Decision: Launch date confirmed for June 15th. All teams aligned.</div>
+          <div class="ed-block">graph TD
+    A[Board Meeting] --> B[Product Launch]
+    A --> C[Hiring Plan]
+    A --> D[Budget Review]
+    B --> E[June 15 Launch]</div>
+        </div>
+      </div>
+      <div class="mock-statusbar"><span>Saved ✓</span><span>·</span><span>247 words</span><span style="margin-left:auto">⌘N New · ⌘K Search</span></div>
+    </div>
+  </div>
+  <div class="toast" style="background:#1a1a1a;color:#fafaf2;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,0.12)">Saved ✓</div>
+  <div class="desc-panel">
+    <div class="desc-title">Direction 1: Ugmonk Analog</div>
+    <div class="desc-text">Inspired by Ugmonk's craft aesthetic — dark charcoal sidebar (#1a1a1a), warm cream editor (#fafaf2), gold accent (#ffd879), serif headings (Playfair Display). Feels tactile, premium, intentional. Like writing on quality paper with a good pen. The serif + sans-serif pairing adds editorial sophistication.</div>
+  </div>
+</div>
+
+<!-- D2: hm.la Architectural -->
+<div class="mockup" id="m2">
+  <div class="mock-shell d2">
+    <div class="mock-sidebar">
+      <span class="logo">simpl</span>
+      <div class="sb-section">
+        <div class="sb-label">NOTEBOOKS</div>
+        <div class="sb-item"><div class="sb-dot"></div> Work Projects</div>
+        <div class="sb-item active"><div class="sb-dot"></div> Board Meetings</div>
+        <div class="sb-item"><div class="sb-dot"></div> Personal</div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-label">SECTIONS</div>
+        <div class="sb-item sb-nested active">April 2026</div>
+        <div class="sb-item sb-nested">March 2026</div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-label">ACCESS</div>
+        <div class="sb-item">Journal</div>
+        <div class="sb-item">Favorites</div>
+        <div class="sb-item">Trash</div>
+      </div>
+    </div>
+    <div class="mock-main">
+      <div class="mock-topbar">
+        <div class="search-bar">Search... <span class="search-kbd">⌘K</span></div>
+        <div style="margin-left:auto;font-size:11px;color:#bbb;display:flex;gap:16px;letter-spacing:0.05em"><span>JOURNAL</span><span>◐</span></div>
+      </div>
+      <div class="mock-content">
+        <div class="editor-area">
+          <div class="ed-h1">Q2 Strategy<br>Meeting Notes</div>
+          <div class="ed-meta"><span>15.04.2026</span><span class="ed-tag">#board-meeting</span><span class="ed-tag">#strategy</span></div>
+          <div class="ed-p">The board discussed <span class="ed-bold">three key initiatives</span> for Q2 including the product launch timeline, hiring plan, and budget allocation.</div>
+          <div class="ed-h2">ACTION ITEMS</div>
+          <div class="ed-p">Dave to finalize the <span class="ed-code">recruitment-pipeline</span> proposal by Friday. Sarah to review budget with finance.</div>
+          <div class="ed-banner">Key Decision: Launch date confirmed for June 15th.</div>
+          <div class="ed-block">graph TD
+    A[Board Meeting] --> B[Product Launch]
+    A --> C[Hiring Plan]
+    A --> D[Budget Review]</div>
+        </div>
+      </div>
+      <div class="mock-statusbar"><span>Saved</span><span>·</span><span>247</span><span style="margin-left:auto">⌘N ⌘K ⌘/</span></div>
+    </div>
+  </div>
+  <div class="toast" style="background:#000;color:#fff;border-radius:0;font-size:12px;box-shadow:0 4px 20px rgba(0,0,0,0.15)">Saved</div>
+  <div class="desc-panel">
+    <div class="desc-title">Direction 2: hm.la Architectural</div>
+    <div class="desc-text">Inspired by hm.la's refined minimalism — pure black sidebar, white editor, zero decoration, dramatic large type with line breaks, uppercase section headers, square-cornered code blocks and toasts. Architectural precision. Maximum confidence through maximum restraint. Every pixel is deliberate.</div>
+  </div>
+</div>
+
+<!-- D3: Slite Gradient -->
+<div class="mockup" id="m3">
+  <div class="mock-shell d3">
+    <div class="mock-sidebar">
+      <span class="logo">simpl</span>
+      <div class="sb-section">
+        <div class="sb-label">Notebooks</div>
+        <div class="sb-item"><div class="sb-dot" style="background:linear-gradient(135deg,#3B82F6,#60a5fa)"></div> Work Projects</div>
+        <div class="sb-item active"><div class="sb-dot"></div> Board Meetings</div>
+        <div class="sb-item"><div class="sb-dot" style="background:linear-gradient(135deg,#f97316,#fb923c)"></div> Personal</div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-label">Sections</div>
+        <div class="sb-item sb-nested active">April 2026</div>
+        <div class="sb-item sb-nested">March 2026</div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-label">Quick Access</div>
+        <div class="sb-item">📔 Journal</div>
+        <div class="sb-item">⭐ Favorites</div>
+        <div class="sb-item">🗑️ Trash</div>
+      </div>
+    </div>
+    <div class="mock-main">
+      <div class="mock-topbar">
+        <div class="search-bar">🔍 Search notes... <span class="search-kbd">⌘K</span></div>
+        <div style="margin-left:auto;font-size:13px;color:#aaa;display:flex;gap:14px"><span>📔 Journal</span><span>🌙</span></div>
+      </div>
+      <div class="mock-content">
+        <div class="editor-area">
+          <div class="ed-h1">Q2 Strategy Meeting Notes</div>
+          <div class="ed-meta"><span>April 15, 2026</span><span>·</span><span class="ed-tag">#board-meeting</span><span class="ed-tag">#strategy</span></div>
+          <div class="ed-p">The board discussed <span class="ed-bold">three key initiatives</span> for Q2 including the product launch timeline, hiring plan, and budget allocation.</div>
+          <div class="ed-h2">Action Items</div>
+          <div class="ed-p">Dave to finalize the <span class="ed-code">recruitment-pipeline</span> proposal by Friday. Sarah to review budget with finance.</div>
+          <div class="ed-banner">✅ Key Decision: Launch date confirmed for June 15th. All teams aligned.</div>
+          <div class="ed-block">graph TD
+    A[Board Meeting] --> B[Product Launch]
+    A --> C[Hiring Plan]
+    A --> D[Budget Review]
+    B --> E[June 15 Launch]</div>
+        </div>
+      </div>
+      <div class="mock-statusbar"><span style="color:#10B981">Saved ✓</span><span>·</span><span>247 words</span><span style="margin-left:auto">⌘N New · ⌘K Search · ⌘/ Commands</span></div>
+    </div>
+  </div>
+  <div class="toast" style="background:#1a1a2e;color:#eee;border-radius:14px;box-shadow:0 8px 30px rgba(26,26,46,0.15)">Saved ✓</div>
+  <div class="desc-panel">
+    <div class="desc-title">Direction 3: Slite Gradient</div>
+    <div class="desc-text">Inspired by Slite's soft gradient approach — white sidebar, gradient logo and accents (purple→pink), editor floats as a card on a subtle gray background, generous 12-16px border radius everywhere, gradient notebook dots. Warm, friendly, modern. The card-within-page creates a "document" feeling.</div>
+  </div>
+</div>
+
+<!-- D4: Prometheus Clean -->
+<div class="mockup" id="m4">
+  <div class="mock-shell d4">
+    <div class="mock-sidebar">
+      <span class="logo">simpl</span>
+      <div class="sb-section">
+        <div class="sb-label">Notebooks</div>
+        <div class="sb-item"><div class="sb-dot" style="border-color:#3B82F6"></div> Work Projects</div>
+        <div class="sb-item active"><div class="sb-dot"></div> Board Meetings</div>
+        <div class="sb-item"><div class="sb-dot" style="border-color:#f97316"></div> Personal</div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-label">Sections</div>
+        <div class="sb-item sb-nested active">April 2026</div>
+        <div class="sb-item sb-nested">March 2026</div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-label">Quick Access</div>
+        <div class="sb-item">Journal</div>
+        <div class="sb-item">Favorites</div>
+        <div class="sb-item">Trash</div>
+      </div>
+    </div>
+    <div class="mock-main">
+      <div class="mock-topbar">
+        <div class="search-bar">Search notes... <span class="search-kbd">⌘K</span></div>
+        <div style="margin-left:auto;font-size:13px;color:#9ca3af;display:flex;gap:14px"><span>Journal</span><span>◐</span></div>
+      </div>
+      <div class="mock-content">
+        <div class="editor-area">
+          <div class="ed-h1">Q2 Strategy Meeting Notes</div>
+          <div class="ed-meta"><span>April 15, 2026</span><span>·</span><span class="ed-tag">#board-meeting</span><span class="ed-tag">#strategy</span></div>
+          <div class="ed-p">The board discussed <span class="ed-bold">three key initiatives</span> for Q2 including the product launch timeline, hiring plan, and budget allocation.</div>
+          <div class="ed-h2">Action Items</div>
+          <div class="ed-p">Dave to finalize the <span class="ed-code">recruitment-pipeline</span> proposal by Friday. Sarah to review budget with finance.</div>
+          <div class="ed-banner">✅ Key Decision: Launch date confirmed for June 15th. All teams aligned.</div>
+          <div class="ed-block">graph TD
+    A[Board Meeting] --> B[Product Launch]
+    A --> C[Hiring Plan]
+    A --> D[Budget Review]
+    B --> E[June 15 Launch]</div>
+        </div>
+      </div>
+      <div class="mock-statusbar"><span style="color:#10B981">Saved ✓</span><span>·</span><span>247 words · 2 min</span><span style="margin-left:auto">⌘N New · ⌘K Search · ⌘/ Commands</span></div>
+    </div>
+  </div>
+  <div class="toast" style="background:#111827;color:#f9fafb;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.12)">Saved ✓</div>
+  <div class="desc-panel">
+    <div class="desc-title">Direction 4: Prometheus Clean</div>
+    <div class="desc-text">Inspired by Prometheus's open, structured approach — light gray sidebar, Inter font, ring-style notebook indicators (outlined not filled), strong single accent color (#7B68EE), 10px radius, generous spacing. Feels open-source and trustworthy. Clean without being sterile. Good balance of structure and breathing room.</div>
+  </div>
+</div>
+
+<!-- D5: Dark Immersive -->
+<div class="mockup" id="m5">
+  <div class="mock-shell d5">
+    <div class="mock-sidebar">
+      <span class="logo">simpl</span>
+      <div class="sb-section">
+        <div class="sb-label">Notebooks</div>
+        <div class="sb-item"><div class="sb-dot" style="background:#60a5fa"></div> Work Projects</div>
+        <div class="sb-item active"><div class="sb-dot"></div> Board Meetings</div>
+        <div class="sb-item"><div class="sb-dot" style="background:#f87171"></div> Personal</div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-label">Sections</div>
+        <div class="sb-item sb-nested active">April 2026</div>
+        <div class="sb-item sb-nested">March 2026</div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-label">Quick Access</div>
+        <div class="sb-item">Journal</div>
+        <div class="sb-item">Favorites</div>
+        <div class="sb-item">Trash</div>
+      </div>
+    </div>
+    <div class="mock-main">
+      <div class="mock-topbar">
+        <div class="search-bar">Search notes... <span class="search-kbd">⌘K</span></div>
+        <div style="margin-left:auto;font-size:13px;color:#555;display:flex;gap:14px"><span>Journal</span><span>☀</span></div>
+      </div>
+      <div class="mock-content">
+        <div class="editor-area">
+          <div class="ed-h1">Q2 Strategy Meeting Notes</div>
+          <div class="ed-meta"><span>April 15, 2026</span><span>·</span><span class="ed-tag">#board-meeting</span><span class="ed-tag">#strategy</span></div>
+          <div class="ed-p">The board discussed <span class="ed-bold" style="color:#e0e0e8">three key initiatives</span> for Q2 including the product launch timeline, hiring plan, and budget allocation.</div>
+          <div class="ed-h2">Action Items</div>
+          <div class="ed-p">Dave to finalize the <span class="ed-code">recruitment-pipeline</span> proposal by Friday. Sarah to review budget with finance.</div>
+          <div class="ed-banner">✅ Key Decision: Launch date confirmed for June 15th.</div>
+          <div class="ed-block">graph TD
+    A[Board Meeting] --> B[Product Launch]
+    A --> C[Hiring Plan]
+    A --> D[Budget Review]
+    B --> E[June 15 Launch]</div>
+        </div>
+      </div>
+      <div class="mock-statusbar"><span style="color:#34d399">Saved ✓</span><span>·</span><span>247 words</span><span style="margin-left:auto">⌘N · ⌘K · ⌘/</span></div>
+    </div>
+  </div>
+  <div class="toast" style="background:#1a1a28;color:#ddd;border-radius:10px;border:1px solid rgba(255,255,255,0.08);box-shadow:0 8px 30px rgba(0,0,0,0.4)">Saved ✓</div>
+  <div class="desc-panel">
+    <div class="desc-title">Direction 5: Dark Immersive</div>
+    <div class="desc-text">Dark-first design — near-black background (#0a0a0f), purple-violet accent (#a78bfa), subtle transparency layers, minimal borders using rgba. Feels like coding at midnight. Immersive, focused, modern. The default experience for developers and night owls. Light mode would be the alternate, not the primary.</div>
+  </div>
+</div>
+
+<!-- D6: Editorial Hybrid (RECOMMENDED) -->
+<div class="mockup" id="m6">
+  <div class="mock-shell d6">
+    <div class="mock-sidebar">
+      <span class="logo">simpl</span>
+      <div class="sb-section">
+        <div class="sb-label">Notebooks</div>
+        <div class="sb-item"><div class="sb-dot" style="background:#3B82F6;border-radius:3px"></div> Work Projects</div>
+        <div class="sb-item active"><div class="sb-dot" style="background:#7B68EE;border-radius:3px"></div> Board Meetings</div>
+        <div class="sb-item"><div class="sb-dot" style="background:#f97316;border-radius:3px"></div> Personal</div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-label">Sections</div>
+        <div class="sb-item sb-nested active" style="color:#7B68EE;font-weight:500">April 2026</div>
+        <div class="sb-item sb-nested">March 2026</div>
+        <div class="sb-item sb-nested">February 2026</div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-label">Quick Access</div>
+        <div class="sb-item">Journal</div>
+        <div class="sb-item">Favorites</div>
+        <div class="sb-item">Trash</div>
+      </div>
+    </div>
+    <div class="mock-main">
+      <div class="mock-topbar">
+        <div class="search-bar">Search notes... <span class="search-kbd">⌘K</span></div>
+        <div style="margin-left:auto;font-size:13px;color:#bbb;display:flex;gap:16px;align-items:center"><span style="cursor:pointer">Journal</span><span style="cursor:pointer">◐</span></div>
+      </div>
+      <div class="mock-content">
+        <div class="editor-area">
+          <div class="ed-h1">Q2 Strategy Meeting Notes</div>
+          <div class="ed-meta">
+            <span>April 15, 2026</span><span>·</span><span>Edited 2 min ago</span><span>·</span>
+            <span class="ed-tag">#board-meeting</span><span class="ed-tag">#strategy</span><span class="ed-tag">#q2</span>
+          </div>
+          <div class="ed-p">The board discussed <span class="ed-bold">three key initiatives</span> for Q2 including the product launch timeline, hiring plan, and budget allocation. All department heads presented their quarterly objectives.</div>
+          <div class="ed-h2">Action Items</div>
+          <div class="ed-p">Dave to finalize the <span class="ed-code">recruitment-pipeline</span> proposal by Friday. Sarah to review budget with finance. Both reports due before the next board session.</div>
+          <div class="ed-banner">✅ Key Decision: Launch date confirmed for June 15th. All teams aligned on deliverables.</div>
+          <div class="ed-h2">Decision Flow</div>
+          <div class="ed-block">graph TD
+    A[Board Meeting] --> B[Product Launch]
+    A --> C[Hiring Plan]
+    A --> D[Budget Review]
+    B --> E[June 15 Launch]
+    C --> F[3 Engineers by May]
+    D --> G[Budget Approved]</div>
+          <div class="ed-p" style="margin-top:20px">Next meeting scheduled for <span class="ed-bold">April 29th</span>. Dave and Sarah to present updates.</div>
+        </div>
+      </div>
+      <div class="mock-statusbar"><span style="color:#10B981">Saved ✓</span><span>·</span><span>312 words</span><span>·</span><span>2 min read</span><span style="margin-left:auto">⌘N New · ⌘K Search · ⌘/ Commands</span></div>
+    </div>
+  </div>
+  <div class="toast" style="background:#1a1a2e;color:#eee;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.1)">Saved ✓</div>
+  <div class="desc-panel">
+    <div class="desc-title">Direction 6: Editorial Hybrid ★ RECOMMENDED</div>
+    <div class="desc-text">The synthesis — near-white backgrounds (#fefefe) with barely-there borders (#f0f0f0), editor as a distinct column with subtle side borders (like a page), squared notebook color dots (3px radius), generous line-height (1.75), purple accent used sparingly (#7B68EE). Combines Ugmonk's intentionality, hm.la's confidence, Slite's friendliness, and Prometheus's clarity. Feels like quality stationery — simple, considered, and unmistakably itself.</div>
+  </div>
+</div>
+
+<script>
+function show(n) {
+  document.querySelectorAll('.mockup').forEach(m => m.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('m'+n).classList.add('active');
+  document.querySelectorAll('.nav-tab')[n-1].classList.add('active');
+}
+</script>
+</body>
+</html>
