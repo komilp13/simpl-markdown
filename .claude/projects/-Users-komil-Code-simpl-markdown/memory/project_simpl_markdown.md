@@ -22,4 +22,7 @@ Simpl Markdown is a greenfield cloud-based markdown notebook web app that Komil 
 - Key UX decisions from party mode: iA Writer as primary editor inspiration, tldraw/excalidraw as playground model (not CodePen), sepia deferred to v1.1, fade-away limited to 4 syntax types in MVP, playground ships with Mermaid only (not full parity), 99.5% public uptime (not 99.9%), sync is last-write-wins not CRDT, FR32/FR33 (wiki links/backlinks) moved to Phase 3
 - Architecture: `_bmad-output/planning-artifacts/architecture.md` (completed 2026-04-17; 17 decisions, full project structure, validation passed, implementation-ready)
 - Key architecture decisions: Option A starter (create-next-app with-supabase), UUIDs everywhere, soft deletes via deleted_at, full-content version snapshots, PostgreSQL FTS with tsvector, TanStack Query + Zustand state, Server Actions for mutations, feature-based folder structure, GitHub Actions CI, three environments ($0 during dev)
-- Next workflow steps: epics & stories → implementation readiness check → development
+- Epics & Stories: `_bmad-output/planning-artifacts/epics.md` (completed 2026-04-17; 13 epics, 77 stories, all 110 FRs covered, validated)
+- Epic breakdown: E1 Foundation+Auth (7), E2 Editor (10), E3 Organization+Search (9), E4 Playground+Marketing (5), E5 Knowledge+History (4), E6 Journal (4), E7 Templates (4), E8 Personalization+Settings (9), E9 Monetization (7), E10 Import/Export (5), E11 Security (4), E12 AI Phase3 (5), E13 Encryption+WikiLinks Phase3 (4)
+- MVP = Epics 1-4 (31 stories). Growth = Epics 5-9 (28 stories). Expansion = Epics 10-11 (9 stories). Phase 3 = Epics 12-13 (9 stories).
+- Next workflow steps: implementation readiness check → development
