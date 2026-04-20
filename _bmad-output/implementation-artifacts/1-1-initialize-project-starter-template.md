@@ -66,8 +66,8 @@ so that I have a working, deployable foundation with auth pre-configured.
   - [x] Create `src/lib/utils/dates.ts` — Date formatting with date-fns
 
 - [ ] Task 6: Verify deployment (AC: #9)
-  - [ ] Commit all changes to git
-  - [ ] Push to GitHub repository
+  - [x] Commit all changes to git
+  - [ ] Push to GitHub repository (requires user auth — run `git push origin main`)
   - [ ] Verify Vercel auto-deploys and builds successfully
   - [ ] Verify deployed app loads without errors
 
@@ -204,8 +204,52 @@ Do NOT install yet (future stories):
 
 ### Agent Model Used
 
+Claude Opus 4.6 (1M context)
+
 ### Debug Log References
+
+- pnpm not installed initially — installed globally via `npm install -g pnpm`
+- Starter template created in /tmp and merged to preserve existing _bmad artifacts
+- Starter uses `app/` at root, not `src/app/` — restructured to `src/` and updated tsconfig paths + components.json
+- `(marketing)/page.tsx` conflicted with root `page.tsx` (both resolve to `/`) — removed marketing placeholder, root page kept for now
+- Next.js page components require default exports — fixed DashboardPage from named to default export
+- Git push requires user authentication — HALT for user to push manually
 
 ### Completion Notes List
 
+- Tasks 1-5 fully complete: project initialized, folder structure created, testing configured, environment documented, utilities created
+- Task 6 partially complete: committed but push requires user auth
+- Build passes: `pnpm build` succeeds with all routes rendering
+- TypeScript: `tsc --noEmit` passes with zero errors
+- Starter auth preserved: login, signup, forgot-password, update-password all in (auth) route group
+
 ### File List
+
+New files created:
+- src/app/(app)/dashboard/page.tsx
+- src/app/(marketing)/.gitkeep
+- src/components/{editor,sidebar,dashboard,journal,settings,pricing,shared}/.gitkeep
+- src/lib/{stripe,editor}/.gitkeep
+- src/lib/utils/cn.ts
+- src/lib/utils/constants.ts
+- src/lib/utils/dates.ts
+- src/types/actions.ts
+- src/{hooks,stores,types,styles}/.gitkeep
+- supabase/migrations/.gitkeep
+- e2e/.gitkeep
+- vitest.config.ts
+- playwright.config.ts
+
+Modified files:
+- .env.example (expanded with all required vars)
+- .gitignore (added supabase/.temp/, playwright dirs)
+- tsconfig.json (paths: @/* → ./src/*)
+- components.json (css path: src/app/globals.css)
+- package.json (added test scripts)
+
+Moved files (from starter root to src/):
+- app/ → src/app/
+- components/ → src/components/
+- lib/ → src/lib/
+- app/auth/ → src/app/(auth)/auth/
+- app/protected/ → src/app/(app)/protected/
