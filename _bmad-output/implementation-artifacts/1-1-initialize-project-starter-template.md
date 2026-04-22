@@ -1,6 +1,6 @@
 # Story 1.1: Initialize Project with Starter Template
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -65,11 +65,11 @@ so that I have a working, deployable foundation with auth pre-configured.
   - [x] Create `src/lib/utils/constants.ts` — App-wide constants
   - [x] Create `src/lib/utils/dates.ts` — Date formatting with date-fns
 
-- [ ] Task 6: Verify deployment (AC: #9)
+- [x] Task 6: Verify deployment (AC: #9)
   - [x] Commit all changes to git
-  - [ ] Push to GitHub repository (requires user auth — run `git push origin main`)
-  - [ ] Verify Vercel auto-deploys and builds successfully
-  - [ ] Verify deployed app loads without errors
+  - [x] Push to GitHub repository
+  - [x] Verify Vercel auto-deploys and builds successfully
+  - [x] Verify deployed app loads without errors
 
 ## Dev Notes
 

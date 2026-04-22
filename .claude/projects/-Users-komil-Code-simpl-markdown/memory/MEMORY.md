@@ -1,1 +1,1 @@
-- [Simpl Markdown project](project_simpl_markdown.md) — Greenfield SaaS markdown notebook; brainstorming + PRD complete, next is UX/architecture
+- [Simpl Markdown project](project_simpl_markdown.md) — All planning done, dev started. Story 1.1 complete. Next: create Story 1.2 with `/bmad-create-story 1-2`
